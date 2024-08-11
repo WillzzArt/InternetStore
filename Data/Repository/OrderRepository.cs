@@ -14,89 +14,57 @@ namespace InternetStoreTestTask.Data.Repository
             _context = context;
         }
 
+        /// <inheritdoc/>
         public async Task SaveOrderFromXml(string xmlPath)
         {
+            if (string.IsNullOrWhiteSpace(xmlPath)) throw new ArgumentNullException(nameof(xmlPath));
             var orders = XmlSerializerHelper.Deserialize<OrderRootXML>(xmlPath);
-            if (orders == null) throw new NullReferenceException();
+            if (orders == null) throw new InvalidOperationException();
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+
+            foreach (var order in orders.Orders)
             {
-                foreach (var order in orders.Orders.Where(o => o != null))
+                var purchases = new List<Purchase>();
+
+                foreach (var product in order.Product)
                 {
-                    var user =
-                        await _context.User.FirstOrDefaultAsync(u => u.Email == order.User.Email)
-                        ?? await SaveUser(order.User);
+                    var productDb = await _context.Product.FirstOrDefaultAsync(p => p.Name == product.Name);
 
-                    var products = new List<Product>();
-                    var purchases = new List<Purchase>();
-
-                    foreach (var product in order.Product)
+                    if (productDb != null)
                     {
-                        var productDb =
-                            await _context.Product.FirstOrDefaultAsync(p => p.Name == product.Name)
-                            ?? await SaveProduct(product);
-
-                        products.Add(productDb);
                         purchases.Add(await SavePurchase(productDb, product.Quantity));
-
                     }
-
-                    var orderDb = new Order
+                    else
                     {
-                        Id = order.Id,
-                        Price = order.Sum,
-                        User = user,
-                        Products = products,
-                        Date = DateOnly.ParseExact(order.Date, "yyyy.MM.dd"),
-                        Purchases = purchases
-                    };
-
-                    await _context.Order.AddAsync(orderDb);
-
+                        throw new InvalidOperationException("product not found: " + product.Name);
+                    }
 
                 }
 
+                var user = await _context.User.FirstOrDefaultAsync(u => u.Email == order.User.Email);
+
+                if (user == null) throw new InvalidOperationException("user not found: " + order.User.Email);
+
+                var orderDb = new Order
+                {
+                    Id = order.Id,
+                    Price = order.Sum,
+                    User = user,
+                    Date = DateOnly.ParseExact(order.Date, "yyyy.MM.dd"),
+                    Purchases = purchases
+                };
+
+                await _context.Order.AddAsync(orderDb);
                 await _context.SaveChangesAsync();
-
-                await transaction.CommitAsync();
             }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-
         }
 
-        private async Task<User> SaveUser(UserXML user)
-        {
-            var userDb = new User
-            {
-                Email = user.Email,
-                Fullname = user.FIO
-            };
-
-            await _context.User.AddAsync(userDb);
-
-            return userDb;
-        }
-
-        private async Task<Product> SaveProduct(ProductXML product)
-        {
-            var productDb = new Product
-            {
-                Name = product.Name,
-                Price = product.Price,
-                Count = 500
-            };
-
-
-            await _context.Product.AddAsync(productDb);
-
-            return productDb;
-        }
-
+        /// <summary>
+        /// Saves the Purchase entity
+        /// </summary>
+        /// <param name="product">Product model</param>
+        /// <param name="count">Count of purchases</param>
+        /// <returns></returns>
         private async Task<Purchase> SavePurchase(Product product, int count)
         {
             var purchaseDb = new Purchase
