@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <orders>
   <order>
-    <no>51</no>
-    <reg_date>2013.12.19</reg_date>
+    <no>1</no>
+    <reg_date>2012.12.19</reg_date>
     <sum>234022.25</sum>
     <product>
       <quantity>2</quantity>
@@ -11,7 +11,7 @@
     </product>
     <product>
       <quantity>5</quantity>
-      <name>Xiom2i 12X</name>
+      <name>Xiomi 12X</name>
       <price>42000.75</price>
     </product>
     <product>
@@ -25,8 +25,8 @@
     </user>
   </order>
   <order>
-    <no>134</no>
-    <reg_date>2011.01.09</reg_date>
+    <no>122</no>
+    <reg_date>2018.01.09</reg_date>
     <sum>126065.05</sum>
     <product>
       <quantity>3</quantity>
