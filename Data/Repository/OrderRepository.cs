@@ -17,12 +17,12 @@ namespace InternetStoreTestTask.Data.Repository
         /// <inheritdoc/>
         public async Task SaveOrderFromXml(string xmlPath)
         {
-            if (string.IsNullOrWhiteSpace(xmlPath)) throw new ArgumentNullException(nameof(xmlPath));
-            var orders = XmlSerializerHelper.Deserialize<OrderRootXML>(xmlPath);
-            if (orders == null) throw new InvalidOperationException();
+            ArgumentException.ThrowIfNullOrWhiteSpace(xmlPath, nameof(xmlPath));
+            var orderRoot = XmlSerializerHelper.Deserialize<OrderRootXML>(xmlPath);
+            if (orderRoot == null) throw new InvalidOperationException($"Can't read the file from {xmlPath}");
 
 
-            foreach (var order in orders.Orders)
+            foreach (var order in orderRoot.Orders)
             {
                 var purchases = new List<Purchase>();
 
@@ -31,20 +31,16 @@ namespace InternetStoreTestTask.Data.Repository
                     var productDb = await _context.Product.FirstOrDefaultAsync(p => p.Name == product.Name);
 
                     if (productDb != null)
-                    {
                         purchases.Add(await SavePurchase(productDb, product.Quantity));
-                    }
                     else
-                    {
-                        throw new InvalidOperationException("product not found: " + product.Name);
-                    }
+                        throw new InvalidOperationException($"product not found: {product.Name}");
 
                 }
 
                 var user = await _context.User.FirstOrDefaultAsync(u => u.Email == order.User.Email);
 
-                if (user == null) throw new InvalidOperationException("user not found: " + order.User.Email);
-
+                if (user == null) throw new InvalidOperationException($"user not found: {order.User.Email}");
+                
                 var orderDb = new Order
                 {
                     Id = order.Id,

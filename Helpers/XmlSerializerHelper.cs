@@ -6,7 +6,7 @@ namespace InternetStoreTestTask.Helpers
     {
         public static T? Deserialize<T>(string filePath) where T : class, new()
         {
-            if (string.IsNullOrWhiteSpace(filePath)) throw new ArgumentNullException(nameof(filePath));
+            ArgumentException.ThrowIfNullOrWhiteSpace(filePath, nameof(filePath));
 
             var serializer = new XmlSerializer(typeof(T));
 

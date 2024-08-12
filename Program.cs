@@ -9,7 +9,20 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
-        var configuration = new ConfigurationBuilder().AddJsonFile("appsetting.json").Build();
+        var serviceProvider = ConfigureServices();
+
+        var orderRepository = serviceProvider.GetRequiredService<IOrderRepository>();
+
+        await orderRepository.SaveOrderFromXml("Order.xml");
+    }
+
+    /// <summary>
+    /// Configures services
+    /// </summary>
+    /// <returns>service provider</returns>
+    private static IServiceProvider ConfigureServices()
+    {
+        var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
 
         IServiceCollection services = new ServiceCollection();
 
@@ -20,12 +33,6 @@ internal class Program
 
         services.AddScoped<IOrderRepository, OrderRepository>();
 
-        var serviceProvider = services.BuildServiceProvider();
-
-
-
-        var orderRepository = serviceProvider.GetRequiredService<IOrderRepository>();
-
-        await orderRepository.SaveOrderFromXml("Order.xml");
+        return services.BuildServiceProvider();
     }
 }
